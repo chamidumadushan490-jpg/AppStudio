@@ -1,0 +1,302 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI App Studio Pro | Build Apps instantly</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- GOOGLE ADSENSE -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4149660828516172" crossorigin="anonymous"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+        
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        
+        .ad-timer-bar { 
+            height: 6px; 
+            background: #10b981; 
+            width: 0%; 
+            transition: width 15s linear; 
+        }
+
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #6366f1;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .pulse-emerald {
+            animation: pulse-bg 2s infinite;
+        }
+        @keyframes pulse-bg {
+            0%, 100% { background-color: #ecfdf5; }
+            50% { background-color: #d1fae5; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col overflow-hidden text-slate-900">
+
+    <!-- Navbar -->
+    <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-3 flex justify-between items-center z-50">
+        <div class="flex items-center gap-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-lg shadow-indigo-200">
+                <i class="fa-solid fa-wand-magic-sparkles"></i>
+            </div>
+            <span class="font-extrabold text-xl tracking-tight">AppStudio<span class="text-indigo-600 text-sm ml-1 font-bold">PRO</span></span>
+        </div>
+
+        <div class="flex items-center gap-4">
+            <div class="flex items-center gap-3 bg-slate-100 px-4 py-2 rounded-full border border-slate-200">
+                <i class="fa-solid fa-coins text-amber-500"></i>
+                <span id="tokenCount" class="font-bold">5</span>
+                <button onclick="watchAd()" class="ml-2 text-indigo-600 hover:text-indigo-800 text-xs font-black uppercase">
+                    + Get Free
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        <!-- Sidebar Controls -->
+        <aside class="w-full lg:w-96 bg-white border-r border-slate-200 flex flex-col p-6 z-40 overflow-y-auto">
+            <div class="mb-6">
+                <h2 class="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4">Create New App</h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold mb-2 text-slate-400 uppercase">App Description</label>
+                        <textarea id="promptInput" rows="6" 
+                            class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition-all resize-none text-sm"
+                            placeholder="Example: Create a modern Todo List app with dark mode and local storage..."></textarea>
+                    </div>
+                    
+                    <button id="generateBtn" onclick="useTokenAction(generateApp, true)"
+                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-xl shadow-indigo-100 transition-all active:scale-95 flex items-center justify-center gap-3">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Generate App</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Ad Refill Info -->
+            <div id="lowTokenWarning" class="hidden mt-auto p-5 rounded-2xl border-2 border-dashed border-emerald-200 bg-emerald-50/50 text-center">
+                <i class="fa-solid fa-gift text-emerald-500 text-2xl mb-2"></i>
+                <p class="text-xs font-bold text-emerald-800 mb-3">Credits Refill in 24h or watch an ad now</p>
+                <button onclick="watchAd()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-xl text-xs font-bold transition">
+                    Watch Ad for 5 Tokens
+                </button>
+            </div>
+        </aside>
+
+        <!-- Preview Canvas -->
+        <section class="flex-1 bg-slate-100 relative overflow-hidden flex flex-col">
+            <!-- Toolbar for Actions -->
+            <div id="previewToolbar" class="hidden absolute top-4 right-4 z-20 flex gap-2">
+                <button onclick="downloadCurrentCode()" class="bg-white/90 backdrop-blur shadow-md hover:bg-white text-slate-700 font-bold py-2 px-4 rounded-xl flex items-center gap-2 transition-all border border-slate-200 active:scale-95">
+                    <i class="fa-solid fa-download text-indigo-600"></i>
+                    <span class="text-xs uppercase">Download Code</span>
+                </button>
+            </div>
+
+            <div id="loadingOverlay" class="hidden absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center text-center p-10">
+                <div class="loader mb-4"></div>
+                <h3 class="text-lg font-bold text-slate-800">Building your application...</h3>
+                <p class="text-slate-500 text-sm">Our AI is generating components and logic.</p>
+            </div>
+
+            <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center text-slate-300">
+                <div class="p-8 rounded-full border-4 border-dashed border-slate-200 mb-4 opacity-50">
+                    <i class="fa-solid fa-code text-6xl"></i>
+                </div>
+                <p class="font-bold text-sm tracking-widest uppercase opacity-40">Ready for Preview</p>
+            </div>
+
+            <iframe id="previewFrame" class="w-full h-full border-none z-10" sandbox="allow-scripts allow-same-origin"></iframe>
+        </section>
+    </main>
+
+    <!-- Rewarded Ad Modal -->
+    <div id="adModal" class="hidden fixed inset-0 bg-slate-900/95 z-[100] flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden shadow-2xl">
+            <div class="p-2 bg-indigo-50 flex justify-between items-center px-8 py-4">
+                <span class="text-[10px] font-black uppercase text-indigo-400 tracking-tighter">Sponsored Message</span>
+                <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full text-[10px] font-bold">Reward: +5 Credits</span>
+            </div>
+            
+            <div class="p-8">
+                <div class="bg-slate-50 aspect-video rounded-3xl border border-slate-100 flex items-center justify-center relative mb-6 overflow-hidden min-h-[300px]">
+                    <!-- AdSense Slot -->
+                    <div id="adContainer" class="w-full h-full">
+                        <div id="adPlaceholder" class="flex flex-col items-center justify-center h-full text-slate-300">
+                            <i class="fa-solid fa-rectangle-ad text-4xl mb-2"></i>
+                            <p class="text-[10px] font-bold uppercase">Ad Content Loading...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <div class="flex-1">
+                        <div class="flex justify-between mb-2">
+                            <span class="text-sm font-bold text-slate-400">Verifying view...</span>
+                            <span id="adCountdown" class="text-indigo-600 font-black">15</span>
+                        </div>
+                        <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                            <div id="adProgress" class="ad-timer-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const apiKey = ""; // Set by environment
+        let tokens = parseInt(localStorage.getItem('userTokens') || '5');
+        const REFILL_INTERVAL = 24 * 60 * 60 * 1000;
+        let lastGeneratedCode = "";
+
+        window.onload = () => {
+            checkDailyRefill();
+            updateTokenUI();
+        };
+
+        function checkDailyRefill() {
+            const lastRefill = localStorage.getItem('lastRefillTime');
+            const now = Date.now();
+            if (!lastRefill || (now - parseInt(lastRefill) >= REFILL_INTERVAL)) {
+                tokens = 5;
+                localStorage.setItem('lastRefillTime', now.toString());
+            }
+        }
+
+        function updateTokenUI() {
+            document.getElementById('tokenCount').innerText = tokens;
+            localStorage.setItem('userTokens', tokens);
+            const warning = document.getElementById('lowTokenWarning');
+            tokens <= 0 ? warning.classList.remove('hidden') : warning.classList.add('hidden');
+        }
+
+        function watchAd() {
+            const modal = document.getElementById('adModal');
+            const container = document.getElementById('adContainer');
+            modal.classList.remove('hidden');
+
+            setTimeout(() => {
+                container.innerHTML = `
+                    <ins class="adsbygoogle"
+                         style="display:block; width:100%; height:100%;"
+                         data-ad-client="ca-pub-4149660828516172"
+                         data-ad-slot="auto"
+                         data-ad-format="rectangle"
+                         data-full-width-responsive="true"></ins>
+                `;
+                try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch(e){}
+            }, 600);
+
+            document.getElementById('adProgress').style.width = "100%";
+            let timeLeft = 15;
+            const timer = setInterval(() => {
+                timeLeft--;
+                document.getElementById('adCountdown').innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    finishAd();
+                }
+            }, 1000);
+        }
+
+        function finishAd() {
+            document.getElementById('adModal').classList.add('hidden');
+            document.getElementById('adProgress').style.width = "0%";
+            document.getElementById('adCountdown').innerText = "15";
+            document.getElementById('adContainer').innerHTML = "";
+            
+            tokens += 5;
+            updateTokenUI();
+            showToast("Success! +5 Tokens Added", "success");
+        }
+
+        function showToast(msg, type) {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-20 left-1/2 -translate-x-1/2 px-6 py-3 rounded-full text-white text-xs font-bold shadow-2xl z-[200] ${type === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`;
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        async function useTokenAction(actionFn, cost = false) {
+            if (cost && tokens <= 0) {
+                watchAd();
+                return;
+            }
+            const res = await actionFn();
+            if (res && cost) {
+                tokens--;
+                updateTokenUI();
+            }
+        }
+
+        async function generateApp() {
+            const prompt = document.getElementById('promptInput').value.trim();
+            if (!prompt) return false;
+
+            setLoading(true);
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        systemInstruction: { parts: [{ text: "You are a professional web developer. Output ONLY valid, single-file HTML code with Tailwind CSS and JS. No markdown, no comments outside code." }] }
+                    })
+                });
+                
+                const data = await response.json();
+                let code = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                code = code.replace(/```html|```/g, "").trim();
+                
+                lastGeneratedCode = code; // Save for download
+                document.getElementById('previewFrame').srcdoc = code;
+                document.getElementById('emptyState').classList.add('hidden');
+                document.getElementById('previewToolbar').classList.remove('hidden');
+                
+                return true;
+            } catch (err) {
+                showToast("AI Error: Check console", "error");
+                return false;
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function downloadCurrentCode() {
+            if (!lastGeneratedCode) return;
+            const blob = new Blob([lastGeneratedCode], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'my-ai-app.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast("Download Started!", "success");
+        }
+
+        function setLoading(state) {
+            const overlay = document.getElementById('loadingOverlay');
+            state ? overlay.classList.remove('hidden') : overlay.classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
